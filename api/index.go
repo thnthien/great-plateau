@@ -1,29 +1,30 @@
 package api
 
 import (
-	"github.com/thnthien/great-plateau/api/fiber/response"
-
 	cerrors "github.com/thnthien/great-plateau/errors"
 )
 
-type HTTPErrorResponse struct {
-	Status     string         `json:"status"`
-	Code       cerrors.Code   `json:"code"`
-	Message    string         `json:"message"`
-	DevMessage any            `json:"dev_message"`
-	Errors     map[string]any `json:"errors"`
-	RID        string         `json:"rid"`
+type HTTPResponse struct {
+	Status     string         `json:"status,omitempty"`
+	Code       cerrors.Code   `json:"code,omitempty"`
+	Message    string         `json:"message,omitempty"`
+	DevMessage any            `json:"dev_message,omitempty"`
+	Errors     map[string]any `json:"errors,omitempty"`
+	RID        string         `json:"rid,omitempty"`
+	Data       any            `json:"data,omitempty"`
+	Link       *Links         `json:"link,omitempty"`
 }
 
-// Handler ...
-type Handler struct {
+type Links struct {
+	BeforeCount int      `json:"before_count,omitempty"`
+	AfterCount  int      `json:"after_count,omitempty"`
+	Count       int      `json:"count,omitempty"`
+	Cursors     *Cursors `json:"cursors,omitempty"`
+	Next        string   `json:"next,omitempty"`
+	Prev        string   `json:"prev,omitempty"`
 }
 
-// Resp ...
-func (Handler) Resp() response.IResponse {
-	return response.NewResponse()
-}
-
-type IHealthController interface {
-	SetReady(b bool)
+type Cursors struct {
+	After  string `json:"after"`
+	Before string `json:"before"`
 }

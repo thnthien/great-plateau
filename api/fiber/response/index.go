@@ -6,6 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/copier"
+
+	"github.com/thnthien/great-plateau/api"
+	cerrors "github.com/thnthien/great-plateau/errors"
 )
 
 // IResponse ...
@@ -14,34 +17,16 @@ type IResponse interface {
 	WithPaging(data any) IResponse
 	WithMessage(data string) IResponse
 	WithStatus(status int) IResponse
+	WithCode(code cerrors.Code) IResponse
 	Json(c *fiber.Ctx) error
 	NoContent(c *fiber.Ctx) error
 }
 
-type cursors struct {
-	After  string `json:"after"`
-	Before string `json:"before"`
-}
-
-type links struct {
-	BeforeCount int      `json:"before_count,omitempty"`
-	AfterCount  int      `json:"after_count,omitempty"`
-	Count       int      `json:"count,omitempty"`
-	Cursors     *cursors `json:"cursors,omitempty"`
-	Next        string   `json:"next"`
-	Prev        string   `json:"prev"`
-}
-
-type commonFormatResponse struct {
-	Data    interface{} `json:"data,omitempty"`
-	Link    *links      `json:"link,omitempty"`
-	Message string      `json:"message,omitempty"`
-}
-
 type response struct {
 	status  int
+	code    cerrors.Code
 	data    interface{}
-	link    *links
+	link    *api.Links
 	message string
 }
 
@@ -65,7 +50,7 @@ func (r response) WithMessage(data string) IResponse {
 // WithPaging ...
 func (r response) WithPaging(data interface{}) IResponse {
 	if r.link == nil {
-		r.link = &links{}
+		r.link = &api.Links{}
 	}
 	err := copier.Copy(r.link, data)
 	if err != nil {
@@ -80,12 +65,22 @@ func (r response) WithStatus(status int) IResponse {
 	return r
 }
 
+func (r response) WithCode(code cerrors.Code) IResponse {
+	r.code = code
+	return r
+}
+
 // Json ...
 func (r response) Json(c *fiber.Ctx) error {
 	if r.status == 0 {
 		r.status = http.StatusOK
 	}
-	return c.Status(r.status).JSON(commonFormatResponse{
+	if r.code == 0 {
+		r.code = cerrors.Code(r.status)
+	}
+	return c.Status(r.status).JSON(api.HTTPResponse{
+		Status:  r.code.String(),
+		Code:    r.code,
 		Data:    r.data,
 		Link:    r.link,
 		Message: r.message,
